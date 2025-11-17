@@ -82,12 +82,12 @@ A simple Retrieval-Augmented Generation (RAG) Q&A application built with LangCha
    
    For M4 Mac (ARM) building for AWS (x86_64):
    ```bash
-   docker buildx build --platform linux/amd64 -t rag-qa-app .
+   docker buildx build --platform linux/amd64 -t dev-ops-rag-app .
    ```
    
    For native builds (same architecture):
    ```bash
-   docker build -t rag-qa-app .
+   docker build -t dev-ops-rag-app .
    ```
 
 3. **Run the container:**
@@ -107,7 +107,7 @@ A simple Retrieval-Augmented Generation (RAG) Q&A application built with LangCha
    github_org_or_user = "your-github-username"
    github_repo_name = "devOpsCloudflare"
    openai_api_key = "your-api-key"
-   manage_apprunner_via_terraform = false
+   manage_apprunner_via_terraform = true
    ```
 
 2. **Initialize Terraform:**
