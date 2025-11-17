@@ -1,0 +1,74 @@
+Relative value analysis has a number of applications.One of the most important applications of 
+relative value analysis is relative value trading, in which various securities are bought and 
+others sold with the goal of enhancing the risk-adjusted expected return of a trading
+book. Identifying relatively rich and relatively cheap securities is
+an important skill for a relative value trader, but additional
+skills are required to be successful as a relative value
+trader. For example, rich securities can and often do
+become richer, while cheap securities can and often do
+become cheaper. A successful relative value trader needs
+to be able to identify some of the reasons that securities
+are rich or cheap in order to form realistic expectations
+about the likelihood of future richening or cheapening. We
+discuss this and other important skills throughout this
+book.
+Relative value analysis is also an important consideration
+when hedging or otherwise immunizing positions against
+various risks. For example, consider a flow trader who is
+sold a position in ten-year (10Y) French government bonds
+by a customer. This trader faces a number of alternatives
+for hedging this risk.
+He could try to sell the French bond to another client or to
+an interdealer broker. He could sell another French bond
+with a similar maturity. He could sell Bund futures
+contracts or German Bunds with similar maturities. He
+could pay fixed in an interest rate swap. He could buy
+payer swaptions or sell receiver swaptions with various
+strikes. He could sell liquid supranational or agency bonds
+issued by entities such as the European Investment Bank.
+Depending on his expectations, he might even sell bonds
+denominated in other currencies, such as US Treasuries or
+UK Gilts. Or he might choose to implement a combination
+of these hedging strategies.
+In devising a hedging strategy, a skilled trader will
+consider the relative valuations of the various securities
+that can be used as hedging instruments. If he expects
+Bunds to cheapen relative to the alternatives, he may
+choose to sell German Bunds as a hedge. And if he believes
+Bund futures are likely to cheapen relative to cash Bunds,
+he may choose to implement this hedge via futures
+contracts rather than in the cash market.
+By considering the relative value implications of these
+hedging alternatives, a skilled flow trader can enhance the
+risk-adjusted expected return of his book. In this way, the
+value of the book reflects not only the franchise value of the
+customer flow but also the relative value opportunities in
+the market and the analytical skills of the trader managing
+the book.
+Given the increasing competitiveness of running a fixed
+income flow business, firms that incorporate relative value
+analysis as part of their business can expect to increase
+their marginal revenues, allowing them to generate higher
+profits and/or to offer liquidity to customers at more
+competitive rates.
+In many respects, a long-only investment manager faces
+many of the same issues as the flow trader in the previous
+example. Just as a flow trader can expect to enhance the
+risk-adjusted performance of his book by incorporating
+relative value analysis into his hedging choices, a long-only
+investment manager can expect to enhance the risk-
+adjusted performance of his portfolio by incorporating
+relative value analysis into his security selection process.
+For example, an investment manager who wants to
+increase his exposure to the 10Y sector of the EUR debt
+market could buy government bonds issued by France,
+Germany, Italy, Spain, the Netherlands, or any of the other
+EMU member states. Or he could buy Bund futures or
+receive fixed in a EURIBOR or ESTR interest rate swap. Or
+he might buy a US Treasury in conjunction with a cross currency basis swap, thereby synthetically creating a US
+government bond denominated in euros.
+An investment manager who incorporates relative value
+analysis as part of his investment process is likely to
+increase his alpha and therefore over time to outperform an
+otherwise similar manager with the same beta who doesn't
+incorporate relative value analysis.
