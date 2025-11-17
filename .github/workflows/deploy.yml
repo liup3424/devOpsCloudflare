@@ -92,7 +92,7 @@ jobs:
       - name: Deploy to App Runner
         uses: awslabs/amazon-app-runner-deploy@main
         with:
-          service: ${{ env.APP_RUNNER_SERVICE_NAME }}
+          service: dev-ops-rag-service
           image: ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.TAG }}
           region: ${{ env.AWS_REGION }}
           access-role-arn: ${{ env.APP_RUNNER_ACCESS_ROLE_ARN }}
