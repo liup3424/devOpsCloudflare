@@ -10,8 +10,9 @@ ragEnv/
 ENV/
 .venv
 
-# FAISS index
-faiss_index/
+# Need faiss_index
+# # FAISS index
+# faiss_index/
 
 # IDE
 .vscode/
