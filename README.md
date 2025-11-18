@@ -1,10 +1,18 @@
 # LangChain RAG Q&A App
 
-A simple Retrieval-Augmented Generation (RAG) Q&A application built with LangChain, FAISS, FastAPI, and deployed to AWS App Runner.
+A simple Retrieval-Augmented Generation (RAG) Q&A application built with:
+
+- **LangChain** + **FAISS** for retrieval  
+- **FastAPI** for the HTTP API  
+- **Docker** for containerization  
+- **Terraform** + **AWS App Runner** for deployment  
+- **Cloudflare** for custom domain
+
+---
 
 ## Project Structure
 
-```
+```text
 .
 ├── data/
 │   └── data.txt              # Knowledge base text file
@@ -12,157 +20,316 @@ A simple Retrieval-Augmented Generation (RAG) Q&A application built with LangCha
 ├── .github/
 │   └── workflows/
 │       └── deploy.yml        # GitHub Actions CI/CD workflow
-├── app.py                    # FastAPI application
+├── app.py                    # FastAPI application (RAG API)
 ├── ingest.py                 # Script to build FAISS index
-├── main.tf                   # Terraform configuration
+├── main.tf                  # Terraform configuration
 ├── requirements.txt          # Python dependencies
-├── Dockerfile               # Docker container definition
+├── Dockerfile                # Docker container definition
 └── README.md
 ```
 
-## Prerequisites
+## 1. Prerequisites
 
-- Python 3.11
-- OpenAI API key
-- AWS account with appropriate permissions
-- Terraform >= 1.0
-- Docker
+Before you start, you need:
 
-## Local Setup
+- An **AWS account** (this example uses `us-east-1`)
+- **AWS CLI** installed and configured (`aws configure`)
+- **Terraform** (>= 1.5)
+- **Docker** with Buildx support  
+  (on Apple Silicon / M-series Mac you'll use `--platform linux/amd64`)
+- A **GitHub repository** for this project
+- An **OpenAI API key**
+- A **domain managed by Cloudflare**
 
-1. **Install dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
+---
 
-2. **Set environment variables:**
-   ```bash
-   export OPENAI_API_KEY="your-api-key"
-   export OPENAI_MODEL="gpt-3.5-turbo"
-   export OPENAI_EMBEDDING_MODEL="text-embedding-3-small"
-   ```
+## 2. Application Overview
 
-3. **Build FAISS index:**
-   ```bash
-   python ingest.py
-   ```
-   This will create the `faiss_index/` directory with the vector store.
+The main app lives in `app.py` and exposes:
 
-4. **Run the FastAPI app locally:**
-   ```bash
-   uvicorn app:app --reload
-   ```
+- `GET /` – basic info (and whether it's running inside Docker)
+- `GET /health` – simple health check returning:
 
-5. **Test the API:**
-   ```bash
-   curl -X POST http://localhost:8000/chat \
-     -H "Content-Type: application/json" \
-     -d '{"question": "what are applications for relative value analysis?"}'
-   ```
+  ```json
+  { "status": "healthy" }
+  ```
 
-## Docker Build
+- `POST /chat` – main RAG Q&A endpoint
 
-**Important:** You must build the FAISS index before building the Docker image, as the Dockerfile copies the `faiss_index/` directory.
+  Request:
+  ```json
+  {
+    "question": "What are applications for relative value analysis?"
+  }
+  ```
 
-1. **Build FAISS index first:**
-   ```bash
-   # Activate virtual environment
-   source ragEnv/bin/activate
-   
-   # Set OpenAI API key
-   export OPENAI_API_KEY="your-api-key"
-   
-   # Build index
-   python ingest.py
-   ```
-   
-   **Note:** If you update `data/data.txt`, rebuild the index before building the Docker image.
+  Response:
+  ```json
+  {
+    "answer": "Helpful Answer: V4 <answer text>"
+  }
+  ```
 
-2. **Build the Docker image:**
-   
-   For M4 Mac (ARM) building for AWS (x86_64):
-   ```bash
-   docker buildx build --platform linux/amd64 -t dev-ops-rag-app .
-   ```
-   
-   For native builds (same architecture):
-   ```bash
-   docker build -t dev-ops-rag-app .
-   ```
+The app expects a pre-built FAISS index under `./faiss_index/` (see `ingest.py`). On startup it:
 
-3. **Run the container:**
-   ```bash
-   docker run -p 8000:8000 \
-     -e OPENAI_API_KEY="your-api-key" \
-     -e OPENAI_MODEL="gpt-3.5-turbo" \
-     -e OPENAI_EMBEDDING_MODEL="text-embedding-3-small" \
-     rag-qa-app
-   ```
+1. Loads the FAISS index.
+2. Constructs a LangChain RetrievalQA chain using:
+   - `OpenAIEmbeddings` (e.g. `text-embedding-3-small`)
+   - `ChatOpenAI` (e.g. `gpt-3.5-turbo`)
+3. Serves the `/chat` endpoint.
 
-## AWS Deployment with Terraform
+If `faiss_index` is missing, the container will fail to start.
 
-1. **Configure Terraform variables:**
-   Create a `terraform.tfvars` file in the root directory:
-   ```hcl
-   github_org_or_user = "your-github-username"
-   github_repo_name = "devOpsCloudflare"
-   openai_api_key = "your-api-key"
-   manage_apprunner_via_terraform = true
-   ```
+---
 
-2. **Initialize Terraform:**
-   ```bash
-   terraform init
-   ```
-   
-   **Note:** If using a remote backend (recommended for CI/CD), configure it in `backend.tf` or via `-backend-config` flags.
+## 3. Local Development
 
-3. **Plan and apply:**
-   ```bash
-   terraform plan
-   terraform apply
-   ```
+### 3.1 Install dependencies
 
-4. **Get outputs for GitHub Secrets:**
-   ```bash
-   terraform output github_actions_role_arn      # Use as AWS_IAM_ROLE_TO_ASSUME
-   terraform output ecr_repository_name          # Use as ECR_REPOSITORY
-   terraform output apprunner_service_arn        # Use as APP_RUNNER_ARN (if created via Terraform)
-   ```
+```bash
+pip install -r requirements.txt
+```
 
-## CI/CD with GitHub Actions
+### 3.2 Set environment variables
 
-The GitHub Actions workflow uses OIDC for authentication and automatically:
-1. Builds and pushes Docker images to ECR
-2. Deploys to App Runner using the latest image
+```bash
+export OPENAI_API_KEY="your-api-key"
+export OPENAI_MODEL="gpt-3.5-turbo"
+export OPENAI_EMBEDDING_MODEL="text-embedding-3-small"
+```
 
-### Required GitHub Secrets
+(You can also put these in a `.env` file and use `python-dotenv` locally.)
 
-Set these secrets in your GitHub repository:
+### 3.3 Build FAISS index
 
-- `AWS_REGION`: AWS region (e.g., `us-east-1`)
-- `ECR_REPOSITORY`: ECR repository name (e.g., `rag-qa-app`)
-- `APP_RUNNER_ARN`: App Runner service ARN (get from Terraform output or AWS Console)
-- `AWS_IAM_ROLE_TO_ASSUME`: IAM role ARN for GitHub Actions OIDC (get from `terraform output github_actions_role_arn`)
+```bash
+python ingest.py
+```
 
-### Setting up OIDC
+This creates the `faiss_index/` directory with the vector store.
 
-1. Run `terraform apply` to create the OIDC provider and IAM role
-2. Get the role ARN: `terraform output github_actions_role_arn`
-3. Add all required secrets to GitHub repository settings
-4. The workflow will use OIDC to authenticate with AWS (no access keys needed)
+### 3.4 Run the FastAPI app locally
 
-## API Endpoints
+```bash
+uvicorn app:app --reload
+```
 
-- `GET /`: Root endpoint
-- `GET /health`: Health check endpoint
-- `POST /chat`: Chat endpoint
-  - Request body: `{"question": "Your question here"}`
-  - Response: `{"answer": "Answer from RAG system"}`
+Visit:
 
-## Environment Variables
+- **Swagger UI**: http://localhost:8000/docs
+- **Health**: http://localhost:8000/health
 
-- `OPENAI_API_KEY`: Required. Your OpenAI API key
-- `OPENAI_MODEL`: Optional. Default: "gpt-3.5-turbo"
-- `OPENAI_EMBEDDING_MODEL`: Optional. Default: "text-embedding-3-small"
+### 3.5 Test the API
 
+```bash
+curl -X POST http://localhost:8000/chat \
+  -H "Content-Type: application/json" \
+  -d '{"question": "what are applications for relative value analysis?"}'
+```
+
+---
+
+## 4. Docker Build & Local Run
+
+**Important:** Build the FAISS index before building the Docker image, because the Dockerfile copies `./faiss_index` into the image.
+
+### 4.1 Build FAISS index (once)
+
+```bash
+# (optional) activate virtualenv
+source ragEnv/bin/activate
+
+export OPENAI_API_KEY="your-api-key"
+python ingest.py
+```
+
+If you update `data/data.txt`, rerun `ingest.py` to refresh the index.
+
+### 4.2 Build the Docker image
+
+**On M-series Mac** (build for AWS x86_64):
+
+```bash
+docker buildx build --platform linux/amd64 -t dev-ops-rag-app .
+```
+
+**On native x86_64:**
+
+```bash
+docker build -t dev-ops-rag-app .
+```
+
+### 4.3 Run the container locally
+
+```bash
+docker run --rm -p 8000:8000 \
+  -e OPENAI_API_KEY="your-api-key" \
+  -e OPENAI_MODEL="gpt-3.5-turbo" \
+  -e OPENAI_EMBEDDING_MODEL="text-embedding-3-small" \
+  dev-ops-rag-app
+```
+
+Then test via:
+
+```bash
+curl http://localhost:8000/health
+
+curl -X POST http://localhost:8000/chat \
+  -H "Content-Type: application/json" \
+  -d '{"question": "what are applications for relative value analysis?"}'
+```
+
+---
+
+## 5. AWS Credentials & Terraform Deployment
+
+### 5.1 Configure AWS credentials 
+
+For local Terraform and any manual Docker pushes to ECR, you need AWS credentials:
+
+**Option A – via `aws configure`:**
+
+```bash
+aws configure
+# AWS Access Key ID: <your key>
+# AWS Secret Access Key: <your secret>
+# Default region name: us-east-1
+# Default output format: json
+```
+
+**Option B – via environment variables:**
+
+```bash
+export AWS_ACCESS_KEY_ID=YOUR_ACCESS_KEY_ID
+export AWS_SECRET_ACCESS_KEY=YOUR_SECRET_ACCESS_KEY
+export AWS_DEFAULT_REGION=us-east-1
+# (optional) export AWS_SESSION_TOKEN=... if using temporary creds
+```
+
+**In CI (GitHub Actions)** we do not use access keys; we use OIDC to assume a role (`github-actions-deploy-role`) created by Terraform.
+
+### 5.2 Terraform variables
+
+Create `terraform.tfvars` in the repo root:
+
+```hcl
+github_org_or_user             = "your-github-username-or-org"
+github_repo_name               = "devOpsCloudflare"
+openai_api_key                 = "your-api-key"
+manage_apprunner_via_terraform = true
+```
+
+`manage_apprunner_via_terraform = true` means Terraform will also create the App Runner service and output its ARN & URL.
+
+### 5.3 Initialize Terraform
+
+```bash
+terraform init
+# (optional) configure a remote backend in backend.tf if desired
+```
+
+### 5.4 Plan and apply
+
+```bash
+terraform plan
+terraform apply
+```
+
+After a successful apply, note the outputs:
+
+```bash
+terraform output github_actions_role_arn      # → GitHub secret AWS_IAM_ROLE_TO_ASSUME
+terraform output ecr_repository_name          # → GitHub secret ECR_REPOSITORY
+terraform output apprunner_service_arn        # → GitHub secret APP_RUNNER_ARN
+terraform output apprunner_url                # default App Runner URL
+```
+
+These are later used by the GitHub Actions workflow.
+
+---
+
+## 6. CI/CD with GitHub Actions
+
+The workflow `.github/workflows/deploy.yml` does the following when you push to `main`:
+
+1. Checks out the code
+2. Uses OIDC to assume the IAM role created by Terraform (`github-actions-deploy-role`, via `aws-actions/configure-aws-credentials@v4`)
+3. Logs in to Amazon ECR
+4. Builds and pushes a Docker image (tagged with the short Git SHA and `latest`)
+5. Deploys the new image to App Runner using `awslabs/amazon-app-runner-deploy@main`
+
+### 6.1 Required GitHub Secrets
+
+In the GitHub repo → **Settings** → **Secrets and variables** → **Actions**, add:
+
+- **`AWS_REGION`**
+  - e.g. `us-east-1`
+- **`ECR_REPOSITORY`**
+  - value from `terraform output ecr_repository_name`
+- **`APP_RUNNER_ARN`**
+  - value from `terraform output apprunner_service_arn`
+- **`AWS_IAM_ROLE_TO_ASSUME`**
+  - value from `terraform output github_actions_role_arn`
+
+**Note:** no `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` are needed in GitHub; the workflow uses OIDC to get temporary credentials.
+
+Once configured, a push to `main` will trigger:
+
+- Build & push image to ECR
+- Update the App Runner service to use the new image
+
+---
+
+## 7. Custom Domain via Cloudflare (Optional)
+
+If you want to serve the app at `https://rag.yourdomain.com`:
+
+1. In the **App Runner console** → your service → **Custom domains** add `rag.yourdomain.com`.
+
+2. AWS shows:
+   - Two CNAMEs for ACM certificate validation (names starting with `_...rag.yourdomain.com`, targets under `acm-validations.aws`)
+   - One CNAME for the domain target: `rag.yourdomain.com -> <random>.us-east-1.awsapprunner.com`
+
+3. In **Cloudflare**, under your zone:
+   - Create three CNAME records:
+     - Two ACM validation CNAMEs (Proxy status: **DNS only**)
+     - One app CNAME:
+       - **Name**: `rag`
+       - **Target**: `<random>.us-east-1.awsapprunner.com`
+       - Start as **DNS only**; after certificate becomes Active you can optionally switch to **Proxied**.
+
+4. Wait until App Runner shows the custom domain status as **Active**, then test:
+
+```bash
+curl https://rag.yourdomain.com/health
+curl https://rag.yourdomain.com/docs
+```
+
+---
+
+## 8. API Endpoints
+
+- **`GET /`** – Simple info about the service and environment.
+- **`GET /health`** – Returns `{"status": "healthy"}`.
+- **`POST /chat`** – 
+  - Body: `{"question": "Your question here"}`
+  - Response: `{"answer": "Helpful Answer: V4 ..."}`.
+
+---
+
+## 9. Environment Variables Summary
+
+**Used locally and/or in the container:**
+
+- `OPENAI_API_KEY` (required) – your OpenAI API key
+- `OPENAI_MODEL` (optional) – default: `"gpt-3.5-turbo"`
+- `OPENAI_EMBEDDING_MODEL` (optional) – default: `"text-embedding-3-small"`
+
+**AWS-related for local tooling (Terraform / manual docker pushes):**
+
+- `AWS_ACCESS_KEY_ID` – your AWS access key ID
+- `AWS_SECRET_ACCESS_KEY` – your AWS secret access key
+- `AWS_SESSION_TOKEN` – optional, if using temporary credentials
+- `AWS_DEFAULT_REGION` / `AWS_REGION` – e.g. `us-east-1`
+
+**In CI**, AWS credentials are obtained via OIDC → IAM role, so these are not stored as secrets in GitHub.

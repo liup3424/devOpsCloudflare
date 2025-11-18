@@ -139,7 +139,7 @@ def chat(request: ChatRequest) -> ChatResponse:
         answer = result.get("result", "I couldn't generate an answer.")
         
         # Format answer with prefix
-        formatted_answer = f"Helpful Answer: V3 {answer}"
+        formatted_answer = f"Helpful Answer: V4 {answer}"
         
         return ChatResponse(answer=formatted_answer)
     except Exception as e:
