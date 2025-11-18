@@ -2,7 +2,8 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-ENV RUNNING_IN_DOCKER=1 # Flag to indicate the app is running in Docker
+# Flag to indicate the app is running in Docker
+ENV RUNNING_IN_DOCKER=1 
 
 # Copy requirements and install Python dependencies
 COPY requirements.txt .
