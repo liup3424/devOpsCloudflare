@@ -143,7 +143,7 @@ variable "openai_api_key" {
 variable "manage_apprunner_via_terraform" {
   description = "Whether App Runner should be created via Terraform (default false; GitHub Actions deploys instead)"
   type        = bool
-  default     = true
+  default     = false
 }
 
 # Store the API Key securely
