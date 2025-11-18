@@ -102,8 +102,7 @@ def startup_event() -> None:
 @app.get("/")
 def root() -> Dict[str, str]:
     """Root endpoint."""
-    import os
-    is_docker = os.path.exists("/.dockerenv")
+    is_docker = os.getenv("RUNNING_IN_DOCKER") == "1"
     return {
         "message": "RAG Q&A API is running",
         "environment": "Docker" if is_docker else "Local"
